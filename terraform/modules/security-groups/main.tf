@@ -6,12 +6,14 @@ resource "aws_security_group" "bastion" {
 
   ingress {
 
-    description = "SSH"
-
     from_port = 22
     to_port   = 22
 
     protocol = "tcp"
+
+    cidr_blocks = [
+      "0.0.0.0/0"
+    ]
   }
 
   egress {
@@ -45,7 +47,7 @@ resource "aws_security_group" "nodes" {
     protocol = "tcp"
 
     security_groups = [
-        aws_security_group.bastion.id
+      aws_security_group.bastion.id
     ]
   }
 

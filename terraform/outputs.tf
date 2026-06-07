@@ -9,3 +9,7 @@ output "public_subnets" {
 output "private_subnets" {
   value = module.vpc.private_subnet_ids
 }
+
+output "bastion_public_ip" {
+  value = module.bastion.public_ip
+}
