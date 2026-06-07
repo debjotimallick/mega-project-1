@@ -121,3 +121,22 @@ module "nat" {
 
   user_data = file("${path.module}/userdata/nat.sh")
 }
+
+resource "aws_eip" "nat" {
+  domain = "vpc"
+
+  tags = {
+    Name = "nat-eip"
+  }
+}
+
+resource "aws_eip_association" "nat" {
+  instance_id   = module.nat.instance_id
+  allocation_id = aws_eip.nat.id
+}
+
+resource "aws_route" "private_nat" {
+  route_table_id         = module.vpc.private_route_table_id
+  destination_cidr_block = "0.0.0.0/0"
+  network_interface_id   = module.nat.primary_network_interface_id
+}

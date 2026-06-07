@@ -21,3 +21,11 @@ output "control_plane_private_ip" {
 output "worker1_private_ip" {
   value = module.worker1.private_ip
 }
+
+output "worker2_private_ip" {
+  value = module.worker2.private_ip
+}
+
+output "nat_public_ip" {
+  value = module.nat.public_ip
+}

@@ -84,21 +84,11 @@ resource "aws_route_table_association" "public" {
   route_table_id = aws_route_table.public.id
 }
 
-resource "aws_eip" "nat" {
-  domain = "vpc"
+resource "aws_route_table_association" "private" {
 
-  tags = {
-    Name = "nat-eip"
-  }
-}
+  count = length(var.private_subnet_cidrs)
 
-resource "aws_eip_association" "nat" {
-  instance_id   = aws_instance.nat.id
-  allocation_id = aws_eip.nat.id
-}
+  subnet_id = aws_subnet.private[count.index].id
 
-resource "aws_route" "private_nat" {
-  route_table_id         = aws_route_table.private.id
-  destination_cidr_block = "0.0.0.0/0"
-  network_interface_id   = aws_instance.nat.primary_network_interface_id
+  route_table_id = aws_route_table.private.id
 }

@@ -26,7 +26,7 @@ resource "aws_instance" "this" {
 
   source_dest_check = var.source_dest_check
 
-  user_data = var.user_data
+  user_data_base64 = base64encode(var.user_data)
 
   tags = {
     Name = var.instance_name
