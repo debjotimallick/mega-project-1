@@ -13,3 +13,11 @@ output "private_subnets" {
 output "bastion_public_ip" {
   value = module.bastion.public_ip
 }
+
+output "control_plane_private_ip" {
+  value = module.control_plane.private_ip
+}
+
+output "worker1_private_ip" {
+  value = module.worker1.private_ip
+}
