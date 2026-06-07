@@ -1,28 +1,21 @@
 resource "aws_security_group" "bastion" {
-
   name        = "bastion-sg"
   description = "SSH access to bastion"
   vpc_id      = var.vpc_id
 
   ingress {
-
     from_port = 22
     to_port   = 22
-
-    protocol = "tcp"
-
+    protocol  = "tcp"
     cidr_blocks = [
       "0.0.0.0/0"
     ]
   }
 
   egress {
-
     from_port = 0
     to_port   = 0
-
-    protocol = "-1"
-
+    protocol  = "-1"
     cidr_blocks = [
       "0.0.0.0/0"
     ]
@@ -34,50 +27,37 @@ resource "aws_security_group" "bastion" {
 }
 
 resource "aws_security_group" "nodes" {
-
   name        = "nodes-sg"
   description = "Kubernetes Nodes"
   vpc_id      = var.vpc_id
 
   ingress {
-
     from_port = 22
     to_port   = 22
-
-    protocol = "tcp"
-
+    protocol  = "tcp"
     security_groups = [
       aws_security_group.bastion.id
     ]
   }
 
   ingress {
-
     from_port = 6443
     to_port   = 6443
-
-    protocol = "tcp"
-
-    self = true
+    protocol  = "tcp"
+    self      = true
   }
 
   ingress {
-
     from_port = 10250
     to_port   = 10250
-
-    protocol = "tcp"
-
-    self = true
+    protocol  = "tcp"
+    self      = true
   }
 
   egress {
-
     from_port = 0
     to_port   = 0
-
-    protocol = "-1"
-
+    protocol  = "-1"
     cidr_blocks = [
       "0.0.0.0/0"
     ]
@@ -88,3 +68,26 @@ resource "aws_security_group" "nodes" {
   }
 }
 
+resource "aws_security_group" "nat" {
+  name        = "nat-sg"
+  description = "NAT Instance SG"
+  vpc_id      = var.vpc_id
+
+  ingress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = [var.vpc_cidr]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "nat-sg"
+  }
+}

@@ -12,7 +12,8 @@ module "security_groups" {
 
   source = "./modules/security-groups"
 
-  vpc_id = module.vpc.vpc_id
+  vpc_id   = module.vpc.vpc_id
+  vpc_cidr = var.vpc_cidr
 }
 
 resource "aws_key_pair" "project_1" {
@@ -77,4 +78,46 @@ module "worker1" {
   associate_public_ip = false
 
   key_name = aws_key_pair.project_1.key_name
+}
+
+module "worker2" {
+
+  source = "./modules/ec2"
+
+  instance_name = "worker-2"
+
+  instance_type = "t3.medium"
+
+  subnet_id = module.vpc.private_subnet_ids[1]
+
+  security_group_ids = [
+    module.security_groups.nodes_sg_id
+  ]
+
+  associate_public_ip = false
+
+  key_name = aws_key_pair.project_1.key_name
+}
+
+module "nat" {
+
+  source = "./modules/ec2"
+
+  instance_name = "nat"
+
+  instance_type = "t3.micro"
+
+  subnet_id = module.vpc.public_subnet_ids[1]
+
+  security_group_ids = [
+    module.security_groups.nat_sg_id
+  ]
+
+  associate_public_ip = true
+
+  source_dest_check = false
+
+  key_name = aws_key_pair.project_1.key_name
+
+  user_data = file("${path.module}/userdata/nat.sh")
 }

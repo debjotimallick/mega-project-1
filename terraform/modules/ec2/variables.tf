@@ -21,3 +21,13 @@ variable "associate_public_ip" {
 variable "key_name" {
   type = string
 }
+
+variable "source_dest_check" {
+  type    = bool
+  default = true
+}
+
+variable "user_data" {
+  type    = string
+  default = ""
+}
