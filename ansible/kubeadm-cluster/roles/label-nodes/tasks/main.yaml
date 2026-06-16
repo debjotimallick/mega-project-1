@@ -1,0 +1,10 @@
+---
+- name: Add worker role to each worker node
+  command: |
+    kubectl label nodes {{ item }} \
+      node-role.kubernetes.io/worker=worker \
+      --overwrite
+  loop: "{{ groups['workers'] }}"
+  changed_when: false
+  environment:
+    KUBECONFIG: /root/.kube/config

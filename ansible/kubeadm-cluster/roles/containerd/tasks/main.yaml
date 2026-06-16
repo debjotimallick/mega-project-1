@@ -1,0 +1,85 @@
+---
+- name: Apply sysctl params
+  command: sysctl --system
+
+- name: Install required packages
+  apt:
+    name:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - gpg
+      - software-properties-common
+    state: present
+    update_cache: yes
+
+- name: Download containerd archive
+  get_url:
+    url: "https://github.com/containerd/containerd/releases/download/v{{ containerd_version }}/containerd-{{ containerd_version }}-linux-amd64.tar.gz"
+    dest: "/tmp/containerd-{{ containerd_version }}.tar.gz"
+    mode: '0644'
+
+- name: Extract containerd binaries
+  unarchive:
+    src: "/tmp/containerd-{{ containerd_version }}.tar.gz"
+    dest: /usr/local
+    remote_src: yes
+
+- name: Download runc binary
+  get_url:
+    url: "https://github.com/opencontainers/runc/releases/download/v{{ runc_version }}/runc.amd64"
+    dest: /usr/local/sbin/runc
+    mode: '0755'
+
+- name: Create containerd config directory
+  file:
+    path: /etc/containerd
+    state: directory
+
+- name: Generate default containerd config
+  shell: |
+    containerd config default > /etc/containerd/config.toml
+  args:
+    creates: /etc/containerd/config.toml
+
+- name: Enable systemd cgroup driver
+  replace:
+    path: /etc/containerd/config.toml
+    regexp: 'SystemdCgroup = false'
+    replace: 'SystemdCgroup = true'
+
+- name: Create containerd systemd service
+  copy:
+    dest: /etc/systemd/system/containerd.service
+    content: |
+      [Unit]
+      Description=containerd container runtime
+      Documentation=https://containerd.io
+      After=network.target local-fs.target
+
+      [Service]
+      ExecStartPre=-/sbin/modprobe overlay
+      ExecStart=/usr/local/bin/containerd
+      Type=notify
+      Delegate=yes
+      KillMode=process
+      Restart=always
+      RestartSec=5
+      LimitNPROC=infinity
+      LimitCORE=infinity
+      LimitNOFILE=infinity
+      TasksMax=infinity
+      OOMScoreAdjust=-999
+
+      [Install]
+      WantedBy=multi-user.target
+
+- name: Reload systemd
+  systemd:
+    daemon_reload: yes
+
+- name: Enable and start containerd
+  systemd:
+    name: containerd
+    enabled: yes
+    state: started

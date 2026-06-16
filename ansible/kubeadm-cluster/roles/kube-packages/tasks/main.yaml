@@ -1,0 +1,61 @@
+---
+- name: Ensure apt keyrings directory exists
+  file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+
+- name: Download Kubernetes Release key
+  get_url:
+    url: "https://pkgs.k8s.io/core:/stable:/{{ kubernetes_package_version }}/deb/Release.key"
+    dest: /tmp/kubernetes-release.key
+    mode: '0644'
+
+- name: Dearmor Kubernetes GPG key
+  command: >
+    gpg --batch --yes --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+    /tmp/kubernetes-release.key
+  args:
+    creates: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+
+- name: Add Kubernetes apt repository
+  copy:
+    dest: /etc/apt/sources.list.d/kubernetes.list
+    content: |
+      deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/{{ kubernetes_package_version }}/deb/ /
+    mode: '0644'
+
+- name: Update apt cache
+  apt:
+    update_cache: yes
+
+- name: Install Kubernetes components
+  apt:
+    name:
+      - kubelet
+      - kubeadm
+      - kubectl
+    state: present
+
+- name: Install jq
+  apt:
+    name: jq
+    state: present
+
+- name: Get node IP address from eth0
+  shell: |
+    ip --json addr show eth0 | jq -r '.[0].addr_info[] | select(.family == "inet") | .local'
+  register: node_ip
+
+- name: Configure kubelet extra args with node IP
+  copy:
+    dest: /etc/default/kubelet
+    content: |
+      KUBELET_EXTRA_ARGS=--node-ip={{ node_ip.stdout }}
+    mode: '0644'
+
+- name: Restart kubelet
+  systemd:
+    name: kubelet
+    daemon_reload: yes
+    state: restarted

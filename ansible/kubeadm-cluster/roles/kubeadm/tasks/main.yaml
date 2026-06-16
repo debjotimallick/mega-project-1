@@ -1,0 +1,83 @@
+---
+- name: Create kubeadm config file
+  copy:
+    dest: /root/kubeadm.config
+    mode: '0644'
+    content: |
+      apiVersion: kubeadm.k8s.io/v1beta4
+      kind: InitConfiguration
+      localAPIEndpoint:
+        advertiseAddress: "{{ controlplane_private_ip }}"
+        bindPort: 6443
+      nodeRegistration:
+        name: "{{ inventory_hostname }}"
+
+      ---
+      apiVersion: kubeadm.k8s.io/v1beta4
+      kind: ClusterConfiguration
+      kubernetesVersion: "{{ kubernetes_version }}"
+      controlPlaneEndpoint: "{{ controlplane_endpoint }}"
+      apiServer:
+        extraArgs:
+          - name: "enable-admission-plugins"
+            value: "NodeRestriction"
+          - name: "audit-log-path"
+            value: "/var/log/kubernetes/audit.log"
+      controllerManager:
+        extraArgs:
+          - name: "node-cidr-mask-size"
+            value: "24"
+      scheduler:
+        extraArgs:
+          - name: "leader-elect"
+            value: "true"
+      networking:
+        podSubnet: "{{ pod_subnet }}"
+        serviceSubnet: "{{ service_subnet }}"
+        dnsDomain: "{{ dns_domain }}"
+
+      ---
+      apiVersion: kubelet.config.k8s.io/v1beta1
+      kind: KubeletConfiguration
+      cgroupDriver: "systemd"
+      syncFrequency: "1m"
+
+      ---
+      apiVersion: kubeproxy.config.k8s.io/v1alpha1
+      kind: KubeProxyConfiguration
+      mode: "ipvs"
+      conntrack:
+        maxPerCore: 32768
+        min: 131072
+        tcpCloseWaitTimeout: "1h"
+        tcpEstablishedTimeout: "24h"
+
+- name: Initialize Kubernetes control plane
+  command: kubeadm init --config=/root/kubeadm.config
+  args:
+    creates: /etc/kubernetes/admin.conf
+
+- name: Create .kube directory
+  file:
+    path: /root/.kube
+    state: directory
+    mode: '0700'
+
+- name: Copy admin kubeconfig
+  copy:
+    src: /etc/kubernetes/admin.conf
+    dest: /root/.kube/config
+    remote_src: yes
+    mode: '0600'
+
+- name: Generate and save join command
+  command: kubeadm token create --print-join-command
+  register: join_cmd
+  changed_when: false
+
+- name: Save join command to file
+  copy:
+    content: "{{ join_cmd.stdout }}"
+    dest: /tmp/kubeadm-join-command.txt
+    mode: '0644'
+    force: yes

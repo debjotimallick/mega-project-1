@@ -1,0 +1,24 @@
+- hosts: all
+  become: true
+  roles:
+    - common
+    - containerd
+    - crictl
+    - kube-packages
+
+- hosts: control_plane
+  become: true
+  roles:
+    - kubeadm
+
+- hosts: workers
+  become: true
+  roles:
+    - join-workers
+
+- hosts: control_plane
+  become: true
+  roles:
+    - label-nodes
+    - cni-calico
+    - metrics-server

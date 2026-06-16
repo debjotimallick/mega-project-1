@@ -1,0 +1,57 @@
+---
+- name: Check if metrics-server is already deployed
+  command: kubectl get deployment -n kube-system metrics-server
+  register: metrics_server_check
+  failed_when: false
+  changed_when: false
+  environment:
+    KUBECONFIG: /root/.kube/config
+
+- name: Download official metrics-server manifest
+  get_url:
+    url: https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+    dest: /root/metrics-server.yaml
+    mode: '0644'
+  when: metrics_server_check.rc != 0
+
+- name: Deploy metrics server (official)
+  command: kubectl apply -f /root/metrics-server.yaml
+  environment:
+    KUBECONFIG: /root/.kube/config
+  when: metrics_server_check.rc != 0
+
+- name: Patch metrics-server with required spec
+  command: >
+    kubectl -n kube-system patch deployment metrics-server
+    --type='json'
+    -p='[
+      {
+        "op": "replace",
+        "path": "/spec/template/spec/containers/0/args/1",
+        "value": "--secure-port=4443"
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/containers/0/args/-",
+        "value": "--kubelet-insecure-tls"
+      },
+      {
+        "op": "replace",
+        "path": "/spec/template/spec/containers/0/ports/0/containerPort",
+        "value": 4443
+      },
+      {
+        "op": "add",
+        "path": "/spec/template/spec/hostNetwork",
+        "value": true
+      }
+    ]'
+  environment:
+    KUBECONFIG: /root/.kube/config
+  when: metrics_server_check.rc != 0
+
+- name: Restart metrics-server
+  command: kubectl -n kube-system rollout restart deployment metrics-server
+  environment:
+    KUBECONFIG: /root/.kube/config
+  when: metrics_server_check.rc != 0
