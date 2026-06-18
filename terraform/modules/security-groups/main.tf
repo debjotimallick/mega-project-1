@@ -50,7 +50,7 @@ resource "aws_security_group" "nodes" {
   ingress {
     from_port = 4443
     to_port   = 4443
-    protocol  = "udp"
+    protocol  = "tcp"
     self      = true
   }
 
