@@ -25,6 +25,8 @@
         name: default
       spec:
         calicoNetwork:
+          nodeAddressAutodetectionV4:
+            interface: ens*
           ipPools:
           - name: default-ipv4-ippool
             blockSize: 26

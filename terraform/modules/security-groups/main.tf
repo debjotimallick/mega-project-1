@@ -41,6 +41,27 @@ resource "aws_security_group" "nodes" {
   }
 
   ingress {
+    from_port = 179
+    to_port   = 179
+    protocol  = "tcp"
+    self      = true
+  }
+
+  ingress {
+    from_port = 4789
+    to_port   = 4789
+    protocol  = "udp"
+    self      = true
+  }
+
+  ingress {
+    from_port = 5473
+    to_port   = 5473
+    protocol  = "tcp"
+    self      = true
+  }
+
+  ingress {
     from_port = 6443
     to_port   = 6443
     protocol  = "tcp"

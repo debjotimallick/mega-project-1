@@ -4,7 +4,7 @@ set -euo pipefail
 TERRAFORM_DIR="$(dirname "${BASH_SOURCE[0]}")/../terraform"
 OUTPUT_FILE="${TERRAFORM_DIR}/terraform-output.tfout"
 
-required_tools=(terraform aws ansible)
+required_tools=(terraform aws ansible jq)
 missing_tools=()
 for tool in "${required_tools[@]}"; do
   if ! command -v "$tool" >/dev/null 2>&1; then
@@ -64,6 +64,45 @@ if [[ -s "$OUTPUT_FILE" ]]; then
   echo "[INFO] Output file: $OUTPUT_FILE"
 else
   echo "[WARN] Terraform output file was created but is empty. Verify your Terraform outputs."
+fi
+
+# Replace IPs in Ansible inventory and group_vars with Terraform outputs
+if [[ -s "$OUTPUT_FILE" ]]; then
+  BASTION_IP="$(jq -r '.bastion_public_ip.value' "$OUTPUT_FILE")"
+  CONTROL_PLANE_IP="$(jq -r '.control_plane_private_ip.value' "$OUTPUT_FILE")"
+  WORKER1_IP="$(jq -r '.worker1_private_ip.value' "$OUTPUT_FILE")"
+  WORKER2_IP="$(jq -r '.worker2_private_ip.value' "$OUTPUT_FILE")"
+
+  PROJECT_ROOT="$(cd "$TERRAFORM_DIR/.." && pwd)"
+  ANSIBLE_INVENTORY="$PROJECT_ROOT/ansible/kubeadm-cluster/inventory/hosts.ini"
+  CONTROL_PLANE_VARS="$PROJECT_ROOT/ansible/kubeadm-cluster/inventory/group_vars/control_plane.yml"
+  KNOWN_HOSTS="$HOME/.ssh/known_hosts"
+
+  echo "[INFO] Updating Ansible inventory with Terraform IPs..."
+
+  sed -i -E "s|^(bastion-01 ansible_host=).*|\1${BASTION_IP}|" "$ANSIBLE_INVENTORY"
+  sed -i -E "s|^(master-01 ansible_host=).*|\1${CONTROL_PLANE_IP}|" "$ANSIBLE_INVENTORY"
+  sed -i -E "s|^(worker-01 ansible_host=).*|\1${WORKER1_IP}|" "$ANSIBLE_INVENTORY"
+  sed -i -E "s|^(worker-02 ansible_host=).*|\1${WORKER2_IP}|" "$ANSIBLE_INVENTORY"
+  sed -i -E "s|^ansible_ssh_common_args=.*|ansible_ssh_common_args='-o ProxyJump=ubuntu@${BASTION_IP}'|" "$ANSIBLE_INVENTORY"
+
+  sed -i -E "s|^(controlplane_private_ip: ).*|\1\"${CONTROL_PLANE_IP}\"|" "$CONTROL_PLANE_VARS"
+  sed -i -E "s|^(controlplane_endpoint: ).*|\1\"${CONTROL_PLANE_IP}:6443\"|" "$CONTROL_PLANE_VARS"
+
+  echo "[INFO] Adding bastion host mapping to /etc/hosts..."
+  if ! grep -qE "^[[:space:]]*${BASTION_IP}[[:space:]]+bastion-01" /etc/hosts; then
+    echo "${BASTION_IP} bastion-01" | sudo tee -a /etc/hosts >/dev/null
+  fi
+
+  mkdir -p "$(dirname "$KNOWN_HOSTS")"
+  echo "[INFO] Scanning bastion host key..."
+  ssh-keyscan -H "$BASTION_IP" >> "$KNOWN_HOSTS" 2>/dev/null
+
+  echo "[INFO] Running Ansible playbook..."
+  cd "$PROJECT_ROOT/ansible/kubeadm-cluster"
+  ansible-playbook -i "$ANSIBLE_INVENTORY" "$PROJECT_ROOT/ansible/kubeadm-cluster/playbooks/site.yaml"
+else
+  echo "[WARN] Terraform output file is empty; skipping inventory update and Ansible run."
 fi
 
 exit 0
