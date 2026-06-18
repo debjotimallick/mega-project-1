@@ -48,6 +48,13 @@ resource "aws_security_group" "nodes" {
   }
 
   ingress {
+    from_port = 4443
+    to_port   = 4443
+    protocol  = "udp"
+    self      = true
+  }
+
+  ingress {
     from_port = 4789
     to_port   = 4789
     protocol  = "udp"
