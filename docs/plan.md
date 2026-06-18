@@ -51,32 +51,32 @@ The focus is on demonstrating platform engineering, infrastructure automation, K
 
 ### Networking Completion
 
-* [ ] Create NAT Instance
-* [ ] Disable Source/Destination Check
-* [ ] Configure IP Forwarding
-* [ ] Configure NAT Rules (iptables)
-* [ ] Create Private Route Table
-* [ ] Associate Private Subnets
-* [ ] Validate outbound internet access from private nodes
+* [x] Create NAT Instance
+* [x] Disable Source/Destination Check
+* [x] Configure IP Forwarding
+* [x] Configure NAT Rules (iptables)
+* [x] Create Private Route Table
+* [x] Associate Private Subnets
+* [x] Validate outbound internet access from private nodes
 
 ### Ansible Foundation
 
-* [ ] Generate inventory from Terraform outputs
-* [ ] Create common role
-* [ ] Configure OS prerequisites
-* [ ] Disable swap
-* [ ] Configure sysctl settings
-* [ ] Install containerd
-* [ ] Validate idempotent execution
+* [x] Generate inventory from Terraform outputs
+* [x] Create common role
+* [x] Configure OS prerequisites
+* [x] Disable swap
+* [x] Configure sysctl settings
+* [x] Install containerd
+* [x] Validate idempotent execution
 
 ### Kubernetes Bootstrap
 
-* [ ] Initialize control plane with kubeadm
-* [ ] Join worker nodes
-* [ ] Configure kubectl access
-* [ ] Install Calico CNI
-* [ ] Install Metrics Server
-* [ ] Validate cluster health
+* [x] Initialize control plane with kubeadm
+* [x] Join worker nodes
+* [x] Configure kubectl access
+* [x] Install Calico CNI
+* [x] Install Metrics Server
+* [x] Validate cluster health
 
 ### GitOps
 
