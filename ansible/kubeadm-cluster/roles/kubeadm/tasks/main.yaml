@@ -16,7 +16,7 @@
       apiVersion: kubeadm.k8s.io/v1beta4
       kind: ClusterConfiguration
       kubernetesVersion: "{{ kubernetes_version }}"
-      controlPlaneEndpoint: "{{ controlplane_endpoint }}"
+      controlPlaneEndpoint: "{{ controlplane_private_ip }}:6443"
       apiServer:
         extraArgs:
           - name: "enable-admission-plugins"

@@ -76,6 +76,7 @@ if [[ -s "$OUTPUT_FILE" ]]; then
   PROJECT_ROOT="$(cd "$TERRAFORM_DIR/.." && pwd)"
   ANSIBLE_INVENTORY="$PROJECT_ROOT/ansible/kubeadm-cluster/inventory/hosts.ini"
   CONTROL_PLANE_VARS="$PROJECT_ROOT/ansible/kubeadm-cluster/inventory/group_vars/control_plane.yml"
+  KUBE_NODES_VARS="$PROJECT_ROOT/ansible/kubeadm-cluster/inventory/group_vars/kube_nodes.yml"
   KNOWN_HOSTS="$HOME/.ssh/known_hosts"
 
   echo "[INFO] Updating Ansible inventory with Terraform IPs..."
@@ -84,10 +85,9 @@ if [[ -s "$OUTPUT_FILE" ]]; then
   sed -i -E "s|^(master-01 ansible_host=).*|\1${CONTROL_PLANE_IP}|" "$ANSIBLE_INVENTORY"
   sed -i -E "s|^(worker-01 ansible_host=).*|\1${WORKER1_IP}|" "$ANSIBLE_INVENTORY"
   sed -i -E "s|^(worker-02 ansible_host=).*|\1${WORKER2_IP}|" "$ANSIBLE_INVENTORY"
-  sed -i -E "s|^ansible_ssh_common_args=.*|ansible_ssh_common_args='-o ProxyJump=ubuntu@${BASTION_IP}'|" "$ANSIBLE_INVENTORY"
-
+  
+  sed -i -E "s|^ansible_ssh_common_args:.*|ansible_ssh_common_args: \"-o ProxyJump=ubuntu@${BASTION_IP}\"|" "$KUBE_NODES_VARS"
   sed -i -E "s|^(controlplane_private_ip: ).*|\1\"${CONTROL_PLANE_IP}\"|" "$CONTROL_PLANE_VARS"
-  sed -i -E "s|^(controlplane_endpoint: ).*|\1\"${CONTROL_PLANE_IP}:6443\"|" "$CONTROL_PLANE_VARS"
 
   echo "[INFO] Adding bastion host mapping to /etc/hosts..."
   if ! grep -qE "^[[:space:]]*${BASTION_IP}[[:space:]]+bastion-01" /etc/hosts; then
@@ -95,6 +95,10 @@ if [[ -s "$OUTPUT_FILE" ]]; then
   fi
 
   mkdir -p "$(dirname "$KNOWN_HOSTS")"
+  until nc -z "$BASTION_IP" 22; do
+    echo "[INFO] Waiting for bastion SSH port..."
+    sleep 5
+  done
   echo "[INFO] Scanning bastion host key..."
   ssh-keyscan -H "$BASTION_IP" >> "$KNOWN_HOSTS" 2>/dev/null
 

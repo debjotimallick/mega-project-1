@@ -71,31 +71,6 @@ fi
 
 echo "[INFO] AWS region is set to: ${AWS_DEFAULT_REGION:-unknown}${AWS_PROFILE:+ (via profile ${AWS_PROFILE})}"
 
-# Retrieve bastion IP if available for cleanup
-BASTION_IP=""
-if [[ -s "$OUTPUT_FILE" ]]; then
-  BASTION_IP="$(jq -r '.bastion_public_ip.value // empty' "$OUTPUT_FILE")"
-fi
-
-# Clean up hosts entry and SSH known_hosts
-if [[ -n "$BASTION_IP" ]]; then
-  echo "[INFO] Cleaning up /etc/hosts entry for bastion IP ${BASTION_IP}..."
-  if grep -qE "^[[:space:]]*${BASTION_IP}[[:space:]]+bastion-01" /etc/hosts 2>/dev/null; then
-    echo "[INFO] Removing bastion-01 entry from /etc/hosts (requires sudo)..."
-    sudo sed -i "/^[[:space:]]*${BASTION_IP}[[:space:]]\+bastion-01/d" /etc/hosts
-  else
-    echo "[INFO] Bastion-01 entry not found in /etc/hosts or not matching ${BASTION_IP}."
-  fi
-
-  KNOWN_HOSTS="$HOME/.ssh/known_hosts"
-  if [[ -f "$KNOWN_HOSTS" ]]; then
-    echo "[INFO] Removing bastion public IP from SSH known_hosts..."
-    ssh-keygen -f "$KNOWN_HOSTS" -R "$BASTION_IP" >/dev/null 2>&1 || true
-  fi
-else
-  echo "[INFO] No bastion public IP found in output file. Skipping /etc/hosts and known_hosts cleanup."
-fi
-
 # Run Terraform Destroy
 cd "$TERRAFORM_DIR"
 echo "[INFO] Initializing Terraform..."
