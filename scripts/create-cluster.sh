@@ -89,11 +89,6 @@ if [[ -s "$OUTPUT_FILE" ]]; then
   sed -i -E "s|^ansible_ssh_common_args:.*|ansible_ssh_common_args: \"-o ProxyJump=ubuntu@${BASTION_IP}\"|" "$KUBE_NODES_VARS"
   sed -i -E "s|^(controlplane_private_ip: ).*|\1\"${CONTROL_PLANE_IP}\"|" "$CONTROL_PLANE_VARS"
 
-  echo "[INFO] Adding bastion host mapping to /etc/hosts..."
-  if ! grep -qE "^[[:space:]]*${BASTION_IP}[[:space:]]+bastion-01" /etc/hosts; then
-    echo "${BASTION_IP} bastion-01" | sudo tee -a /etc/hosts >/dev/null
-  fi
-
   mkdir -p "$(dirname "$KNOWN_HOSTS")"
   until nc -z "$BASTION_IP" 22; do
     echo "[INFO] Waiting for bastion SSH port..."
