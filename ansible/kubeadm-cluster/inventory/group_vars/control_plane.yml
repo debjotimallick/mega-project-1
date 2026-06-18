@@ -1,5 +1,5 @@
 pod_subnet: "10.244.0.0/16"
 service_subnet: "10.96.0.0/12"
 dns_domain: "cluster.local"
-controlplane_private_ip: "10.0.11.90"
-controlplane_endpoint: "10.0.11.90:6443"
+controlplane_private_ip: "10.0.11.252"
+controlplane_endpoint: "10.0.11.252:6443"

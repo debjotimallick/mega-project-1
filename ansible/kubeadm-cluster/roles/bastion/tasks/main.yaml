@@ -1,0 +1,28 @@
+---
+- name: Install kubectl on bastion
+  community.general.snap:
+    name: kubectl
+    classic: true
+    state: present
+
+- name: Ensure bastion kube directory exists
+  file:
+    path: /home/ubuntu/.kube
+    state: directory
+    owner: ubuntu
+    mode: "0700"
+
+- name: Copy kubeconfig to bastion
+  copy:
+    src: /tmp/kubeconfig/config
+    dest: /home/ubuntu/.kube/config
+    owner: ubuntu
+    mode: "0600"
+
+- name: Remove temporary kubeconfig from controller
+  file:
+    path: /tmp/kubeconfig/config
+    state: absent
+  delegate_to: localhost
+  become: false
+  run_once: true

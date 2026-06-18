@@ -2,7 +2,7 @@
 - name: Create kubeadm config file
   copy:
     dest: /root/kubeadm.config
-    mode: '0644'
+    mode: "0644"
     content: |
       apiVersion: kubeadm.k8s.io/v1beta4
       kind: InitConfiguration
@@ -61,14 +61,21 @@
   file:
     path: /root/.kube
     state: directory
-    mode: '0700'
+    mode: "0700"
 
 - name: Copy admin kubeconfig
   copy:
     src: /etc/kubernetes/admin.conf
     dest: /root/.kube/config
     remote_src: yes
-    mode: '0600'
+    mode: "0600"
+
+- name: Fetch kubeconfig from the control plane
+  fetch:
+    src: /root/.kube/config
+    dest: /tmp/kubeconfig/config
+    flat: yes
+  run_once: true
 
 - name: Generate and save join command
   command: kubeadm token create --print-join-command
@@ -79,5 +86,5 @@
   copy:
     content: "{{ join_cmd.stdout }}"
     dest: /tmp/kubeadm-join-command.txt
-    mode: '0644'
+    mode: "0644"
     force: yes

@@ -1,4 +1,4 @@
-- hosts: all
+- hosts: kube_nodes
   become: true
   roles:
     - common
@@ -22,3 +22,8 @@
     - label-nodes
     - cni-calico
     - metrics-server
+
+- hosts: bastion
+  become: true
+  roles:
+    - bastion
