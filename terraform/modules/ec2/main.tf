@@ -24,6 +24,8 @@ resource "aws_instance" "this" {
 
   key_name = var.key_name
 
+  iam_instance_profile = var.iam_instance_profile
+
   source_dest_check = var.source_dest_check
 
   user_data_base64 = base64encode(var.user_data)

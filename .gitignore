@@ -276,3 +276,4 @@ terraform.rc
 *.p12
 *.env
 *.pub
+ssh_key*

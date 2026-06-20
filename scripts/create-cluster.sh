@@ -50,6 +50,26 @@ echo "[INFO] AWS region is set to: ${AWS_DEFAULT_REGION:-unknown}${AWS_PROFILE:+
 
 cd "$TERRAFORM_DIR"
 
+echo "[INFO] Creating SSH key pair..."
+if [[ ! -f "$TERRAFORM_DIR/keys/ssh_key" ]]; then
+  mkdir -p "$TERRAFORM_DIR/keys"
+  ssh-keygen -f "$TERRAFORM_DIR/keys/ssh_key" -N "" -q
+else
+  echo "[INFO] SSH key pair already exists at $TERRAFORM_DIR/keys/ssh_key. Skipping key generation."
+fi
+
+echo "[INFO] Add SSH key to ssh-agent..."
+if ! ssh-add -l | grep -q "$TERRAFORM_DIR/keys/ssh_key"; then
+  eval "$(ssh-agent -s)"
+  ssh-add "$TERRAFORM_DIR/keys/ssh_key"
+else
+  echo "[INFO] SSH key is already added to ssh-agent."
+fi
+
+echo "[INFO] Validating and Formatting Terraform configuration..."
+terraform fmt -recursive
+terraform validate
+
 echo "[INFO] Initializing Terraform..."
 terraform init -input=false
 

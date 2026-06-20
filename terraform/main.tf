@@ -16,11 +16,21 @@ module "security_groups" {
   vpc_cidr = var.vpc_cidr
 }
 
-resource "aws_key_pair" "project_1" {
+module "aws_ebs_csi_driver_role" {
 
-  key_name = "project_1"
+  source    = "./modules/role"
+  role_name = "AWSEBSCSIDriverRole"
 
-  public_key = file("${path.module}/keys/project_1.pub")
+  tags = {
+    Name = "AWSEBSCSIDriverRole"
+  }
+}
+
+resource "aws_key_pair" "ssh_key" {
+
+  key_name = "ssh_key"
+
+  public_key = file("${path.module}/keys/ssh_key.pub")
 }
 
 module "bastion" {
@@ -39,7 +49,7 @@ module "bastion" {
 
   associate_public_ip = true
 
-  key_name = aws_key_pair.project_1.key_name
+  key_name = aws_key_pair.ssh_key.key_name
 }
 
 module "control_plane" {
@@ -58,7 +68,9 @@ module "control_plane" {
 
   associate_public_ip = false
 
-  key_name = aws_key_pair.project_1.key_name
+  iam_instance_profile = module.aws_ebs_csi_driver_role.instance_profile_name
+
+  key_name = aws_key_pair.ssh_key.key_name
 }
 
 module "worker1" {
@@ -77,7 +89,9 @@ module "worker1" {
 
   associate_public_ip = false
 
-  key_name = aws_key_pair.project_1.key_name
+  iam_instance_profile = module.aws_ebs_csi_driver_role.instance_profile_name
+
+  key_name = aws_key_pair.ssh_key.key_name
 }
 
 module "worker2" {
@@ -96,7 +110,9 @@ module "worker2" {
 
   associate_public_ip = false
 
-  key_name = aws_key_pair.project_1.key_name
+  iam_instance_profile = module.aws_ebs_csi_driver_role.instance_profile_name
+
+  key_name = aws_key_pair.ssh_key.key_name
 }
 
 module "nat" {
@@ -117,7 +133,7 @@ module "nat" {
 
   source_dest_check = false
 
-  key_name = aws_key_pair.project_1.key_name
+  key_name = aws_key_pair.ssh_key.key_name
 
   user_data = file("${path.module}/userdata/nat.sh")
 }
