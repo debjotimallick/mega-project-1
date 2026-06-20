@@ -100,6 +100,8 @@ if [[ -s "$OUTPUT_FILE" ]]; then
   echo "[INFO] Running Ansible playbook..."
   cd "$PROJECT_ROOT/ansible/kubeadm-cluster"
   ansible-playbook -i "$ANSIBLE_INVENTORY" "$PROJECT_ROOT/ansible/kubeadm-cluster/playbooks/site.yaml"
+  echo "[INFO] Ansible playbook execution completed."
+  echo "[INFO] Kubernetes cluster setup is complete. You can now access the cluster by SSHing into the bastion host ${BASTION_IP} and using kubectl from there."
 else
   echo "[WARN] Terraform output file is empty; skipping inventory update and Ansible run."
 fi
