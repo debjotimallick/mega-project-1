@@ -277,3 +277,4 @@ terraform.rc
 *.env
 *.pub
 ssh_key*
+*.excalidraw
