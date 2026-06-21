@@ -278,3 +278,4 @@ terraform.rc
 *.pub
 ssh_key*
 *.excalidraw
+*.png
